@@ -1,0 +1,236 @@
+[Typescript]
+In your vserver VM, open a typescript file by typing:
+
+script <-- open a typescript file
+ssh user_name@users.cs.umb.edu
+log in using your credentials
+ssh ulab
+log in using your credentials
+cd into your directory
+./tutor
+....... <-- do what you need to do in UNIX
+logout <-- from ulab
+logout <-- from users, you are back to vserver
+
+scp .... <-- transfer lnx file from UNIX to vserver
+mtip...
+go 100100
+..... <-- do what you need to do in tutor VM
+cntl-C
+cntl-C <-- 2 control-C's to get out of tutor and back to vserver //~q quits out of tutor
+exit <-- close the typescript file
+
+[ssh]
+cp -r /courses/cs341/s18/cheungr/mp#/ .	#Copy files from mp# to current directory
+
+od -x filename.filetype					#Dumps file in hex (x) view. Used to find hidden/unwanted ascii characters that make/break your code.
+gdb file.lnx
+tar rem /dev/ttyS0
+set $eip=0x100100
+c										#continue
+info reg (i reg)						#pull up registers and their values
+b *0x(address)							#make a breakpoint
+
+[vm]
+vserver$ scp username@users.cs.umb.edu:cs341/mp#/filename.*  .	# copy files from UNIX to Tutor location
+vserver$ scp typescript your_username@users.cs.umb.edu:cs341/examples/test_dir/ # copy typescript from Tutor to UNIX
+vserver$ mtip -f tutor.lnx                                  	# always use board #1 
+vserver$ /sbin/ifconfig											#find ip address (eth1)
+
+[Assembly]
+.globl	_mycode	#Defining a label for external reference (call)
+.text			#Places the assembler output into program memory space (ROM)
+.data			#Places the assembler output into a static initialized memory space (RAM)
+.bss			#Allows assembler to set labels for uninitiailized memory space
+.section		#Ignore/omit this directive with our assembler
+.end			#End of the Assembly Language
+
+ld				#Given address for the sections
+
+Defining/initializing static storage locations
+label1:
+	.long 0x12345678	#32 bits
+label2:
+	.word 0x1234 		#16 bits
+label3:
+	.byte 0x1234		#8 bits
+	
+Defining/initializing a string
+label1:
+	.ascii "Hello World\n\0"
+label2:
+	.asciz "Hello World\n"
+	
+Constant definitions follow C coventions:
+$123			#Decimal constant
+$0x123			#Hex constant
+$'a'			#Character constant
+$'\n'			#Character escape sequence
+
+With the following exception:
+$s'\0'			#This results in '0' instead of 0, to get around problem, us $0
+
+Symbolic Constant Names
+SYMBOL = value
+NCASES = 8
+mov1 $NCASES, %eax
+
+Direct addressing for memory
+		.text
+		movb %al, 0x1234
+		movb 0x1234, %dl
+		...
+
+		.text
+		movb %al, total
+		movb total, %dl
+		...
+		.data
+total: 	.byte	0
+
+Indirect-like *pointer in Character
+movl $0x1234, %ebp
+movb (%ebp), %al
+file:///C:/Users/Velocity/Pictures/CS%20Notes/ind_1.PNG
+
+Indirect-like *(pointer+4)in Character
+movl $0x1234, %ebp
+movb 4(%ebp), %al
+file:///C:/Users/Velocity/Pictures/CS%20Notes/ind_2.PNG
+
+Directing
+movl first, %eax	#direct from memory
+movl %eax, second	#direct to mem
+
+If Else
+	cmpl $0, %eax		#test value of eax for zero
+	jnz else
+	...					#statement1
+	jmp end				#and jump over statement2
+else:					#just a label
+	...					#statement2
+end:
+	...					#next instruction after if-else
+	
+While loop
+	movl $3, %eax		#loop three times
+while:					#just a label
+	cmpl $0, %eax		#test value of eax for zero
+	jz end				#exit if counted down to zero
+	...					#body of loop here
+	subl $1, %eax		#decrement eax
+	jump while			#loop
+end:
+	...					#next instruction after loop
+	
+Unconditional Jumps
+	jmp 0x10ec			#hard coded address
+	...
+
+	jmp label			#address of a label
+	...
+label:
+
+Conditional Jumps
+Jump	Condition
+-jl		less than <
+-jle	less than or equal <=
+-jg		greater than >
+-jge	greater than or equal >=
+-je		equal ==
+-jncc	NOT of each of the above conditions !=
+
+Unsigned Conditional Jumps
+Jump	Condition
+-jb		below
+-jbe	below or equal
+-ja		above
+-jae	above or equal
+-je*	equal *
+-jncc	NOT of each of the above conditions
+
+addl %edx, %eax		#eax = edx + eax
+
+How to debug:
+1. Load up tutor vm server, login
+2. scp necessary files
+3. mtip the lnx file
+4. Load up tutor vm, <CR>
+5. Download files (~downloading)
+6. Type in "gdb"
+7. Open up PuTTy and connect to the vm address, login, (optional: create script)
+8. "gdb filename.lnx"
+9. tar rem /dev/ttyS0
+10. set $eip=0x100100
+11. i reg
+12. x/16i 0x(address of _functionname)
+13. Set breakpoints at address of _functionname, right before the popl, 
+and wherever you want to track eax's change of value in each loop.
+14. c (continue)
+15. i reg
+16. Repeat steps 14 and 15 until the code finishes.
+17. quit and "exit" script
+
+Reading from an I/O device to a register:
+	inw $0xdd, %ax		#input direct 8 bit address
+	inb $0xdd, %al		#input direct 8 bit address
+	
+	movw $0x3f8, %dx
+	inw (%dx), %ax		#input indirect 16 bit address
+	inb (%dx), %al		#input indirect 16 bit address
+
+Writing from a register to an I/O device:
+	The “output” instruction – direct addressing
+		outw %ax, $0xdd  #  8 bit address
+		outb %al, $0xdd  #  8 bit address
+
+	The “output” instruction – indirect addressing
+		movw $0x3f8, %dx
+		outw %ax, (%dx)  # 16 bit address
+		outb %al, (%dx)  # 16 bit address
+	
+Integer types
+.octa 16 bytes on x86_64 and x86
+.quad 8 bytes on x86_64 and x86
+.long and .int 4 bytes on x86_64 and x86
+.word, .short and .hword 2 bytes on x86_64 and x86
+.byte is, of course, 1 byte on x86_64 and x86
+
+Floating-point types
+.tfloat 10 bytes on x86_64 and x86
+.double 8 bytes on x86_64 and x86
+.single and .float 4 bytes on x86_64 and x86
+
+Shift:
+sall $4, %eax		#logical left shift of %eax by 4 bits
+sarb %cl, label 	#arithmetic right shift of memory byte by a variable value stored in the %cl
+
+sall $4, %eax 		#%eax times 2^4 (multiply by 2^N)
+sarb %cl, label		#memory byte / 2^%cl (divide by 2^N)
+
+Multiply and Divide:
+#Unsigned
+mulb
+div
+
+#Signed
+imul
+idiv
+
+#multiply always operates with %al, %ax, or %eax
+mulb %bl
+%ax	<--	%al * %bl
+mulw %bx
+%dx, %ax <-- %ax * %bx
+mull %ebx
+%edx, %eax <-- %eax * %ebx
+
+cli		#disable interrupts
+...		#code goes here
+...
+...
+sti		#re-enables interrupts
+
+pwd
+echo $pcinc
+ls the directory from pcinc, then cat serial.h
